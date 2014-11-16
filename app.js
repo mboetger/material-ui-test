@@ -16,6 +16,7 @@ var passport = require('passport');
 var login = require('./routes/login')(passport)
 var LocalStrategy = require('passport-local').Strategy;
 var session = require('express-session');
+var ConnectRoles = require('connect-roles');
 
 var app = express();
 
@@ -40,9 +41,36 @@ app.use(passport.initialize());
 app.use(passport.session());
 passport.use(new LocalStrategy(oauthModel.getUser));
 
-app.use('/', routes);
-app.use('/', login);
-app.use('/admin', admin);
+//set up roles
+var user = new ConnectRoles({
+  failureHandler: function (req, res, action) {
+    var accept = req.headers.accept || '';
+    res.status(403);
+    if (~accept.indexOf('html')) {
+      res.render('access-denied', {title: 'Access Denied', action: action});
+    } else {
+      res.send('Access Denied - You don\'t have permission to: ' + action);
+    }
+  }
+});
+
+app.use(user.middleware());
+//anonymous users can only access the home page
+user.use(function (req, action) {
+  if (!req.isAuthenticated()) return action === 'open';
+});
+//don't return false, because admins can also see private
+user.use('private', function (req) {
+  if (req.user.role === 'noob') { return true; }
+});
+//admins can see everything
+user.use(function (req) {
+  if (req.user.role === 'admin') { return true; }
+});
+
+app.use('/', user.can('open'), routes);
+app.use('/', user.can('open'), login);
+app.use('/admin', user.can('admin'), admin);
 app.use('/users', users);
 
 

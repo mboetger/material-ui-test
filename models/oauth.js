@@ -118,13 +118,14 @@ model.saveRefreshToken = function (refreshToken, clientId, expires, userId, call
 model.deserializeUser = function(id, callback) {
   pg.connect(connString, function (err, client, done) {
     if (err) return callback(err);
-    client.query('SELECT id,username FROM users WHERE id=$1', [id], function (err, result) {
+    client.query('SELECT id,username,role FROM users WHERE id=$1', [id], function (err, result) {
       if (err || !result.rowCount) return callback(err);
       var user= result.rows[0];
       console.log('deserialize');
       callback(null, {
         id:user.id,
         username: user.username,
+        role: user.role
       });
       done();
     });
@@ -142,7 +143,7 @@ model.serializeUser = function(user, callback) {
 model.getUser = function (username, password, callback) {
   pg.connect(connString, function (err, client, done) {
     if (err) return callback(err);
-    client.query('SELECT id, username, password FROM users WHERE username=$1', [username], function (err, result) {
+    client.query('SELECT id, username, password, role FROM users WHERE username=$1', [username], function (err, result) {
       if (err) { callback(err, false); }
       else {
         if (!result.rowCount) {
@@ -152,7 +153,8 @@ model.getUser = function (username, password, callback) {
           console.log('verified');
           callback(null, { 
             id: result.rows[0].id,
-            username: result.rows[0].username
+            username: result.rows[0].username,
+            role: result.rows[0].role
           });
         } else {
           console.log('not verified');
