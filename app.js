@@ -9,6 +9,8 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var less = require("less-middleware");
 var oauthserver = require('oauth2-server');
+var orm = require('orm');
+var oauthModel = require('./models/oauth.js');
 
 var app = express();
 
@@ -40,7 +42,7 @@ app.use('/users', users);
 
 //oauth server
 app.oauth = oauthserver({
-    model: {}, // See below for specification
+    model: oauthModel, // See below for specification
     grants: ['password'],
     debug: true
 });

@@ -17,6 +17,8 @@
     "material-ui": "^0.2.2",
     "morgan": "~1.3.0",
     "oauth2-server": "^2.3.0",
+    "orm": "^2.1.19",
+    "pg": "^3.6.3",
     "serve-favicon": "~2.1.3"
   },
   "devDependencies": {
