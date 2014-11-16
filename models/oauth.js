@@ -121,7 +121,6 @@ model.deserializeUser = function(id, callback) {
     client.query('SELECT id,username,role FROM users WHERE id=$1', [id], function (err, result) {
       if (err || !result.rowCount) return callback(err);
       var user= result.rows[0];
-      console.log('deserialize');
       callback(null, {
         id:user.id,
         username: user.username,
@@ -147,17 +146,14 @@ model.getUser = function (username, password, callback) {
       if (err) { callback(err, false); }
       else {
         if (!result.rowCount) {
-          console.log('no row count');
           callback(null, false);
         } else if (passwordHash.verify(password, result.rows[0].password)) {
-          console.log('verified');
           callback(null, { 
             id: result.rows[0].id,
             username: result.rows[0].username,
             role: result.rows[0].role
           });
         } else {
-          console.log('not verified');
           callback(null, false);
         }
       }
