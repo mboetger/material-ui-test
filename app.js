@@ -8,6 +8,7 @@ var bodyParser = require('body-parser');
 var routes = require('./routes/index');
 var users = require('./routes/users');
 var less = require("less-middleware");
+var oauthserver = require('oauth2-server');
 
 var app = express();
 
@@ -35,6 +36,18 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
 app.use('/users', users);
+
+
+//oauth server
+app.oauth = oauthserver({
+    model: {}, // See below for specification
+    grants: ['password'],
+    debug: true
+});
+app.all('/oauth/token', app.oauth.grant());
+app.get('/api', app.oauth.authorise(), function (req, res) {
+    res.send('Secret area');
+});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
