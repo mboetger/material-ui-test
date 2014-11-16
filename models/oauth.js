@@ -15,8 +15,10 @@
  */
 
 var pg = require('pg'),
-  model = module.exports,
-  connString = process.env.DATABASE_URL;
+    uuid = require('node-uuid'),
+    passwordHash = require('password-hash'),
+    model = module.exports,
+    connString = process.env.DATABASE_URL;
 
 /*
  * Required
@@ -113,14 +115,60 @@ model.saveRefreshToken = function (refreshToken, clientId, expires, userId, call
   });
 };
 
+model.deserializeUser = function(id, callback) {
+  pg.connect(connString, function (err, client, done) {
+    if (err) return callback(err);
+    client.query('SELECT id,username FROM users WHERE id=$1', [id], function (err, result) {
+      if (err || !result.rowCount) return callback(err);
+      var user= result.rows[0];
+      console.log('deserialize');
+      callback(null, {
+        id:user.id,
+        username: user.username,
+      });
+      done();
+    });
+  });
+
+};
+
+model.serializeUser = function(user, callback) {
+  callback(null, user.id);
+};
+
 /*
  * Required to support password grant type
  */
 model.getUser = function (username, password, callback) {
   pg.connect(connString, function (err, client, done) {
     if (err) return callback(err);
-    client.query('SELECT id FROM users WHERE username = $1 AND password = $2', [username,
-        password], function (err, result) {
+    client.query('SELECT id, username, password FROM users WHERE username=$1', [username], function (err, result) {
+      if (err) { callback(err, false); }
+      else {
+        if (!result.rowCount) {
+          console.log('no row count');
+          callback(null, false);
+        } else if (passwordHash.verify(password, result.rows[0].password)) {
+          console.log('verified');
+          callback(null, { 
+            id: result.rows[0].id,
+            username: result.rows[0].username
+          });
+        } else {
+          console.log('not verified');
+          callback(null, false);
+        }
+      }
+      done();
+    });
+  });
+};
+
+model.createUser= function(username, password, callback) {
+  pg.connect(connString, function(err,client,done) {
+    if (err) return callback(err);
+
+    client.query('INSERT INTO users VALUES($1,$2,$3)', [uuid.v4(),username,passwordHash.generate(password)], function(err, result) {
       callback(err, result.rowCount ? result.rows[0] : false);
       done();
     });

@@ -1,0 +1,8 @@
+extends layout
+
+block content
+  h1= title
+  p Welcome to #{title}
+  include includes/login.jade
+  +login("/login")
+  script(type='text/javascript', src="javascripts/bundles/login.js")

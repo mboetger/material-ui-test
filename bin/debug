@@ -1,0 +1,3 @@
+#!/bin/bash
+npm run-script build-dev
+DEBUG=material-test foreman start

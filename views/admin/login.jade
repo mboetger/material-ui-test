@@ -3,7 +3,6 @@ extends layout
 block content
   h1= title
   p Welcome to #{title}
-  if (user) 
-    p Username: #{user.username}
-  #example
+  include ../includes/login.jade
+  +login('/admin/login')
   script(type='text/javascript', src="javascripts/bundle.js")

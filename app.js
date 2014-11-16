@@ -11,20 +11,18 @@ var less = require("less-middleware");
 var oauthserver = require('oauth2-server');
 var orm = require('orm');
 var oauthModel = require('./models/oauth.js');
+var admin = require('./routes/admin');
+var passport = require('passport');
+var login = require('./routes/login')(passport)
+var LocalStrategy = require('passport-local').Strategy;
+var session = require('express-session');
 
 var app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
-app.set("js", app.get("env") === "development" ? "dev" : "min");
-app.use(function(req, res, next) {
-    if (req.url === "/javascripts/bundle.js") {
-          req.url = "/javascripts/bundle." + app.get("js") + ".js";
-            }
 
-      next();
-});
 // uncomment after placing your favicon in /public
 //app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
@@ -34,9 +32,17 @@ app.use(cookieParser());
 //material-ui needs less
 app.use(less(path.join(__dirname, 'public/less')));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({ secret: 'sick bunny' }));
 
+passport.serializeUser(oauthModel.serializeUser);
+passport.deserializeUser(oauthModel.deserializeUser);
+app.use(passport.initialize());
+app.use(passport.session());
+passport.use(new LocalStrategy(oauthModel.getUser));
 
 app.use('/', routes);
+app.use('/', login);
+app.use('/admin', admin);
 app.use('/users', users);
 
 
