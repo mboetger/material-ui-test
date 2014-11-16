@@ -12,6 +12,7 @@ var oauthserver = require('oauth2-server');
 var orm = require('orm');
 var oauthModel = require('./models/oauth.js');
 var admin = require('./routes/admin');
+var noobs = require('./routes/noobs');
 var passport = require('passport');
 var login = require('./routes/login')(passport)
 var LocalStrategy = require('passport-local').Strategy;
@@ -71,6 +72,7 @@ user.use(function (req) {
 app.use('/', user.can('open'), routes);
 app.use('/', user.can('open'), login);
 app.use('/admin', user.can('admin'), admin);
+app.use('/home', user.can('noobs'), noobs);
 app.use('/users', users);
 
 

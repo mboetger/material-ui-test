@@ -11,7 +11,11 @@ function createRouter(passport) {
   router.post('/login', 
     passport.authenticate('local', { failureRedirect: '/login' }),
     function(req,res) {
-      res.redirect('/');
+      if (req.user && req.user.role === 'admin') {
+        res.redirect('/admin');
+      } else {
+        res.redirect('/');
+      }
   });
 
   return router;
