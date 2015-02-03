@@ -17,6 +17,8 @@ var passport = require('passport');
 var login = require('./routes/login')(passport)
 var LocalStrategy = require('passport-local').Strategy;
 var session = require('express-session');
+var redis = require('redis');
+var RedisStore = require('connect-redis')(session);
 var ConnectRoles = require('connect-roles');
 
 var app = express();
@@ -34,7 +36,15 @@ app.use(cookieParser());
 //material-ui needs less
 app.use(less(path.join(__dirname, 'public/less')));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(session({ secret: 'sick bunny' }));
+
+var redisOptions = {
+  client: redis.createClient(),
+  host: process.env.REDIS_HOST,
+  port: process.env.REDIS_PORT
+};
+
+app.redisStore = new RedisStore(redisOptions);
+app.use(session({ secret: 'sick bunny', store: app.redisStore}));
 
 passport.serializeUser(oauthModel.serializeUser);
 passport.deserializeUser(oauthModel.deserializeUser);

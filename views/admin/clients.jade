@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  h1= title
+  h2 Admin
+  #clients(data=clients)
+  #create-client
+  script(type='text/javascript', src="/javascripts/bundles/admin-clients.js")
+

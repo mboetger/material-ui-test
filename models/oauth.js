@@ -16,6 +16,7 @@
 
 var pg = require('pg'),
     uuid = require('node-uuid'),
+    _ = require('underscore'),
     passwordHash = require('password-hash'),
     model = module.exports,
     connString = process.env.DATABASE_URL;
@@ -41,6 +42,66 @@ model.getAccessToken = function (bearerToken, callback) {
         expires: token.expires,
         userId: token.userId
       });
+      done();
+    });
+  });
+};
+
+model.editClient= function (client_id, client_secret, redirect_uri, callback) {
+  pg.connect(connString, function (err, client, done) {
+    if (err) return callback(err);
+
+    client.query('UPDATE oauth_clients SET client_secrect=$1, redirect_uri=$2 WHERE client_id=$3', [client_secrect, redirect_uri, client_id], function (err, result) {
+      if (err) return callback(err);
+
+      // This object will be exposed in req.oauth.client
+      callback(null, _.map(result.rows, function(client){
+        return {
+          clientId: client.client_id,
+          clientSecret: client.client_secret,
+          redirect_uri: client.redirect_uri
+        };
+      }));
+      done();
+    });
+  });
+};
+
+model.addClient= function (client_secret, redirect_uri, callback) {
+  pg.connect(connString, function (err, client, done) {
+    if (err) return callback(err);
+
+    client.query('INSERT INTO oauth_clients VALUES ($1,$2,$3)', [uuid.v4(),client_secret, redirect_uri], function (err, result) {
+      if (err) return callback(err);
+
+      // This object will be exposed in req.oauth.client
+      callback(null, _.map(result.rows, function(client){
+        return {
+          clientId: client.client_id,
+          clientSecret: client.client_secret,
+          redirect_uri: client.redirect_uri
+        };
+      }));
+      done();
+    });
+  });
+};
+
+model.getClients = function (callback) {
+  pg.connect(connString, function (err, client, done) {
+    if (err) return callback(err);
+
+    client.query('SELECT client_id, client_secret, redirect_uri FROM oauth_clients', [], function (err, result) {
+      if (err) return callback(err);
+
+      // This object will be exposed in req.oauth.client
+      callback(null, _.map(result.rows, function(client){
+        return {
+          clientId: client.client_id,
+          clientSecret: client.client_secret,
+          redirect_uri: client.redirect_uri
+        };
+      }));
       done();
     });
   });
@@ -155,6 +216,30 @@ model.getUser = function (username, password, callback) {
           });
         } else {
           callback(null, false);
+        }
+      }
+      done();
+    });
+  });
+};
+
+/*
+ * Required to support password grant type
+ */
+model.getUsers = function (callback) {
+  pg.connect(connString, function (err, client, done) {
+    if (err) return callback(err);
+    client.query('SELECT id, username, role FROM users', [], function (err, result) {
+      if (err) { callback(err, false); }
+      else {
+        if (!result.rowCount) {
+          callback(null, false);
+        } else  {
+          callback(null, _.map(result.rows, function(row) { return { 
+            id: row.id,
+            username: row.username,
+            role: row.role
+          };}));
         }
       }
       done();
